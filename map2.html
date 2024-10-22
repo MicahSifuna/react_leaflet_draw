@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+      <title>Leaflet Map</title>
+      <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" /> -->
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+      <!-- <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> -->
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+      <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+</head>
+
+<style>
+      .coords {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+      }
+
+      #coordinates {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background-color: #f3f3f3;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 600px;
+            max-height: 200px;
+            overflow-y: auto;
+
+      }
+</style>
+
+<body>
+      <div id="map" style="height: 600px; margin: 40px;"></div>
+      <div class="coords">
+            <p id="coordinates"></p>
+      </div>
+      <script>
+            // Initialize the map
+            var map = L.map('map').setView([-4.054429, 39.661073], 14);
+
+            // Add a base layer
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  maxZoom: 19,
+                  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            // Initialize the FeatureGroup to store drawn layers
+            var drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            // Initialize the draw control and pass it the FeatureGroup of editable layers
+            var drawControl = new L.Control.Draw({
+                  edit: {
+                        featureGroup: drawnItems
+                  },
+                  draw: {
+                        polygon: true,
+                        polyline: true,
+                        rectangle: true,
+                        circle: true,
+                        marker: true
+                  }
+            });
+            map.addControl(drawControl);
+
+            // Function to display coordinates in JSON format with feature type
+            function displayCoordinates(layer) {
+                  var coordinates = [];
+                  var featureType = "";
+
+                  if (layer instanceof L.Polygon) {
+                        featureType = "Polygon";
+                        layer.getLatLngs()[0].forEach(function (point) {
+                              coordinates.push({ lat: point.lat, lng: point.lng });
+                        });
+                  } else if (layer instanceof L.Polyline) {
+                        featureType = "Polyline";
+                        layer.getLatLngs().forEach(function (point) {
+                              coordinates.push({ lat: point.lat, lng: point.lng });
+                        });
+                  } else if (layer instanceof L.Circle) {
+                        featureType = "Circle";
+                        var latlng = layer.getLatLng();
+                        coordinates.push({ lat: latlng.lat, lng: latlng.lng });
+                  } else if (layer instanceof L.Rectangle) {
+                        featureType = "Rectangle";
+                        layer.getLatLngs()[0].forEach(function (point) {
+                              coordinates.push({ lat: point.lat, lng: point.lng });
+                        });
+                  } else if (layer instanceof L.Marker) {
+                        featureType = "Point";
+                        var latlng = layer.getLatLng();
+                        coordinates.push({ lat: latlng.lat, lng: latlng.lng });
+                  } else if (layer instanceof L.CircleMarker) {
+                        featureType = "CircleMarker";
+                        var latlng = layer.getLatLng();
+                        coordinates.push({ lat: latlng.lat, lng: latlng.lng });
+                  }
+
+                  var featureInfo = {
+                        type: featureType,
+                        coordinates: coordinates
+                  };
+
+                  document.getElementById('coordinates').textContent = JSON.stringify(featureInfo, null, 2);
+                  console.log("Feature information", featureInfo)
+            }
+
+            // Handle the created event to add the drawn layer to the map and display coordinates
+            map.on('draw:created', function (e) {
+                  var layer = e.layer;
+                  drawnItems.addLayer(layer);
+                  displayCoordinates(layer);
+            });
+
+      </script>
+</body>
+
+</html>
